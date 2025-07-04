@@ -1,5 +1,11 @@
+/**
+ * 💥 HULK-POWERED DASHBOARD
+ * Affichage des statistiques HULK et Bruce !
+ */
+
 import React from 'react';
-import { Calendar, FileText, Clock, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Calendar, FileText, Clock, TrendingUp, AlertTriangle, CheckCircle, Zap, Brain } from 'lucide-react';
+import { useAnalysis } from '../contexts/AnalysisContext';
 
 interface DashboardProps {
   projects: any[];
@@ -11,275 +17,248 @@ interface DashboardProps {
 
 const translations = {
   en: {
-    title: 'Project Dashboard',
-    subtitle: 'Overview of your code optimization projects',
-    projectType: 'Project Type',
-    filesAnalyzed: 'Files Analyzed',
-    uploadedOn: 'Uploaded on',
-    status: 'Status',
-    optimizations: 'Optimizations',
-    pending: 'Pending',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    analyzing: 'Analyzing',
-    ready: 'Ready',
-    completed: 'Completed',
-    viewDetails: 'View Details',
-    summary: {
-      totalProjects: 'Total Projects',
-      totalOptimizations: 'Total Optimizations',
-      averageImprovement: 'Average Improvement',
-      securityIssues: 'Security Issues Found'
-    }
+    title: 'HULK-Powered Dashboard',
+    subtitle: 'Bruce plans, HULK smashes bad code!',
+    hulkStats: 'HULK Statistics',
+    bruceStats: 'Bruce Statistics',
+    rageLevel: 'Rage Level',
+    smashCount: 'Smashes',
+    totalDestruction: 'Total Destruction',
+    isTransformed: 'Transformed',
+    sessionCount: 'Sessions',
+    avgDuration: 'Avg Duration',
+    yes: 'Yes',
+    no: 'No'
   },
   fr: {
-    title: 'Tableau de bord des projets',
-    subtitle: 'Vue d\'ensemble de vos projets d\'optimisation de code',
-    projectType: 'Type de projet',
-    filesAnalyzed: 'Fichiers analysés',
-    uploadedOn: 'Téléchargé le',
-    status: 'Statut',
-    optimizations: 'Optimisations',
-    pending: 'En attente',
-    approved: 'Approuvé',
-    rejected: 'Rejeté',
-    analyzing: 'Analyse',
-    ready: 'Prêt',
-    completed: 'Terminé',
-    viewDetails: 'Voir les détails',
-    summary: {
-      totalProjects: 'Projets totaux',
-      totalOptimizations: 'Optimisations totales',
-      averageImprovement: 'Amélioration moyenne',
-      securityIssues: 'Problèmes de sécurité trouvés'
-    }
-  },
-  es: {
-    title: 'Panel de proyectos',
-    subtitle: 'Resumen de tus proyectos de optimización de código',
-    projectType: 'Tipo de proyecto',
-    filesAnalyzed: 'Archivos analizados',
-    uploadedOn: 'Subido el',
-    status: 'Estado',
-    optimizations: 'Optimizaciones',
-    pending: 'Pendiente',
-    approved: 'Aprobado',
-    rejected: 'Rechazado',
-    analyzing: 'Analizando',
-    ready: 'Listo',
-    completed: 'Completado',
-    viewDetails: 'Ver detalles',
-    summary: {
-      totalProjects: 'Proyectos totales',
-      totalOptimizations: 'Optimizaciones totales',
-      averageImprovement: 'Mejora promedio',
-      securityIssues: 'Problemas de seguridad encontrados'
-    }
+    title: 'Tableau de Bord HULK',
+    subtitle: 'Bruce planifie, HULK écrase le mauvais code !',
+    hulkStats: 'Statistiques HULK',
+    bruceStats: 'Statistiques Bruce',
+    rageLevel: 'Niveau de Rage',
+    smashCount: 'Écrasements',
+    totalDestruction: 'Destruction Totale',
+    isTransformed: 'Transformé',
+    sessionCount: 'Sessions',
+    avgDuration: 'Durée Moyenne',
+    yes: 'Oui',
+    no: 'Non'
   }
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ projects, selectedProject, onProjectSelect, language, theme }) => {
+export default function Dashboard({ projects, selectedProject, onProjectSelect, language, theme }: DashboardProps) {
+  const { getHulkStats, getBruceStats, analysisResult } = useAnalysis();
   const t = translations[language as keyof typeof translations];
+  
+  const hulkStats = getHulkStats();
+  const bruceStats = getBruceStats();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'analyzing':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'ready':
-        return 'bg-blue-100 text-blue-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const getHulkRageColor = (rageLevel: number) => {
+    if (rageLevel < 50) return 'text-green-400';
+    if (rageLevel < 100) return 'text-yellow-400';
+    if (rageLevel < 200) return 'text-orange-400';
+    return 'text-red-400';
   };
 
-  const getStatusColorDark = (status: string) => {
-    switch (status) {
-      case 'analyzing':
-        return 'bg-yellow-900 text-yellow-300';
-      case 'ready':
-        return 'bg-blue-900 text-blue-300';
-      case 'completed':
-        return 'bg-green-900 text-green-300';
-      default:
-        return 'bg-gray-700 text-gray-300';
-    }
+  const getSmashPowerEmoji = (rageLevel: number) => {
+    if (rageLevel < 50) return '😌';
+    if (rageLevel < 100) return '😠';
+    if (rageLevel < 200) return '😡';
+    return '🤬';
   };
-
-  const getProjectTypeIcon = (type: string) => {
-    switch (type) {
-      case 'React':
-        return '⚛️';
-      case 'Vue':
-        return '🔧';
-      case 'Angular':
-        return '🅰️';
-      case 'Node.js':
-        return '🟢';
-      case 'Python':
-        return '🐍';
-      default:
-        return '📄';
-    }
-  };
-
-  const totalOptimizations = projects.reduce((acc, project) => acc + (project.optimizations?.length || 0), 0);
-  const pendingOptimizations = projects.reduce((acc, project) => 
-    acc + (project.optimizations?.filter((opt: any) => opt.status === 'pending').length || 0), 0
-  );
-  const approvedOptimizations = projects.reduce((acc, project) => 
-    acc + (project.optimizations?.filter((opt: any) => opt.status === 'approved').length || 0), 0
-  );
-  const securityIssues = projects.reduce((acc, project) => 
-    acc + (project.optimizations?.filter((opt: any) => opt.type === 'security').length || 0), 0
-  );
-
-  const summaryStats = [
-    { 
-      title: t.summary.totalProjects, 
-      value: projects.length, 
-      icon: FileText, 
-      color: 'text-blue-600' 
-    },
-    { 
-      title: t.summary.totalOptimizations, 
-      value: totalOptimizations, 
-      icon: TrendingUp, 
-      color: 'text-green-600' 
-    },
-    { 
-      title: t.summary.averageImprovement, 
-      value: '24%', 
-      icon: CheckCircle, 
-      color: 'text-purple-600' 
-    },
-    { 
-      title: t.summary.securityIssues, 
-      value: securityIssues, 
-      icon: AlertTriangle, 
-      color: 'text-red-600' 
-    }
-  ];
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className={`text-3xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-          {t.title}
-        </h1>
-        <p className={`text-lg ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-          {t.subtitle}
-        </p>
-      </div>
+    <div className={`min-h-screen p-6 ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+      <div className="max-w-7xl mx-auto">
+        {/* Header HULK */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <Zap className="w-8 h-8 text-green-400" />
+              <Brain className="w-8 h-8 text-purple-400" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-purple-500 bg-clip-text text-transparent">
+                {t.title}
+              </h1>
+              <p className="text-gray-500">{t.subtitle}</p>
+            </div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {summaryStats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {stat.title}
-                  </p>
-                  <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {stat.value}
-                  </p>
-                </div>
-                <Icon className={`w-8 h-8 ${stat.color}`} />
+        {/* Stats HULK & Bruce */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* HULK Stats */}
+          <div className={`p-6 rounded-lg border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-green-400">💚 {t.hulkStats}</h3>
+              <span className="text-2xl">{hulkStats.isTransformed ? '💪' : '🧬'}</span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span>{t.rageLevel}:</span>
+                <span className={`font-bold ${getHulkRageColor(hulkStats.rageLevel)}`}>
+                  {hulkStats.rageLevel} {getSmashPowerEmoji(hulkStats.rageLevel)}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>{t.smashCount}:</span>
+                <span className="font-bold text-red-400">{hulkStats.smashCount} 💥</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>{t.totalDestruction}:</span>
+                <span className="font-bold text-purple-400">{hulkStats.totalDestruction || 0} 🌪️</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>{t.isTransformed}:</span>
+                <span className={`font-bold ${hulkStats.isTransformed ? 'text-green-400' : 'text-gray-400'}`}>
+                  {hulkStats.isTransformed ? t.yes : t.no}
+                </span>
               </div>
             </div>
-          );
-        })}
-      </div>
+            
+            {/* Barre de rage */}
+            <div className="mt-4">
+              <div className="flex justify-between text-sm mb-1">
+                <span>Rage Meter</span>
+                <span>{hulkStats.rageLevel}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-500 ${
+                    hulkStats.rageLevel < 50 ? 'bg-green-400' :
+                    hulkStats.rageLevel < 100 ? 'bg-yellow-400' :
+                    hulkStats.rageLevel < 200 ? 'bg-orange-400' : 'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(hulkStats.rageLevel, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
 
-      <div className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden`}>
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className={`text-xl font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-            Projects
-          </h2>
+          {/* Bruce Stats */}
+          <div className={`p-6 rounded-lg border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-purple-400">🧠 {t.bruceStats}</h3>
+              <span className="text-2xl">🔬</span>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span>{t.sessionCount}:</span>
+                <span className="font-bold text-blue-400">{bruceStats.totalSessions} 📊</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>{t.avgDuration}:</span>
+                <span className="font-bold text-green-400">
+                  {Math.round(bruceStats.averageDuration / 1000)}s ⏱️
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span>Current Plan:</span>
+                <span className="font-bold text-yellow-400">
+                  {bruceStats.currentPlan ? 'Active 🎯' : 'Idle 😴'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Plan actuel */}
+            {bruceStats.currentPlan && (
+              <div className="mt-4 p-3 bg-purple-900/20 rounded-lg">
+                <div className="text-sm">
+                  <div className="flex justify-between">
+                    <span>Progress:</span>
+                    <span>{bruceStats.currentPlan.currentStep}/{bruceStats.currentPlan.totalSteps}</span>
+                  </div>
+                  <div className="w-full bg-gray-600 rounded-full h-1 mt-2">
+                    <div 
+                      className="h-1 bg-purple-400 rounded-full transition-all"
+                      style={{ 
+                        width: `${(bruceStats.currentPlan.currentStep / bruceStats.currentPlan.totalSteps) * 100}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className={`${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <tr>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  Project
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  {t.projectType}
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  {t.filesAnalyzed}
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  {t.status}
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  {t.optimizations}
-                </th>
-                <th className={`px-6 py-3 text-left text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className={`${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} divide-y ${theme === 'dark' ? 'divide-gray-700' : 'divide-gray-200'}`}>
+
+        {/* Projets avec statut HULK */}
+        <div className={`p-6 rounded-lg border ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <h3 className="text-xl font-semibold mb-6">💻 Projets</h3>
+          
+          {projects.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🚀</div>
+              <h4 className="text-lg font-medium mb-2">Prêt pour la première analyse HULK ?</h4>
+              <p className="text-gray-500">Uploadez vos fichiers et laissez Bruce planifier pendant que HULK écrase les bugs !</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projects.map((project, index) => (
-                <tr key={project.id} className={`hover:${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-50'} transition-colors duration-150`}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="text-lg mr-3">{getProjectTypeIcon(project.type)}</div>
-                      <div>
-                        <div className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                          {project.name}
-                        </div>
-                        <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {project.language}
-                        </div>
+                <div
+                  key={index}
+                  onClick={() => onProjectSelect(project)}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    selectedProject?.id === project.id
+                      ? 'border-green-400 bg-green-50 dark:bg-green-900/20'
+                      : theme === 'dark'
+                      ? 'border-gray-700 bg-gray-800 hover:border-gray-600'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{project.name}</h4>
+                    <span className="text-2xl">
+                      {project.status === 'hulk-smashed' ? '💚' : 
+                       project.status === 'analyzed' ? '🔍' : '📁'}
+                    </span>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500 space-y-1">
+                    <div>Files: {project.filesAnalyzed}</div>
+                    <div>Status: {project.status}</div>
+                    <div>Type: {project.projectType}</div>
+                  </div>
+                  
+                  {project.hulkScore && (
+                    <div className="mt-3 p-2 bg-green-900/20 rounded">
+                      <div className="text-sm font-medium text-green-400">
+                        HULK Score: {project.hulkScore}/100 💪
                       </div>
                     </div>
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
-                    {project.type}
-                  </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-900'}`}>
-                    {project.files}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      theme === 'dark' ? getStatusColorDark(project.status) : getStatusColor(project.status)
-                    }`}>
-                      {t[project.status as keyof typeof t] || project.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
-                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {t.pending}: {project.optimizations?.filter((opt: any) => opt.status === 'pending').length || 0}
-                      </span>
-                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
-                        {t.approved}: {project.optimizations?.filter((opt: any) => opt.status === 'approved').length || 0}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => onProjectSelect(project)}
-                      className="text-blue-600 hover:text-blue-900 transition-colors duration-150"
-                    >
-                      {t.viewDetails}
-                    </button>
-                  </td>
-                </tr>
+                  )}
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
+
+        {/* Messages HULK */}
+        {hulkStats.isTransformed && (
+          <div className="mt-6 p-4 bg-green-900/20 border border-green-400 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <span className="text-2xl">💚</span>
+              <div>
+                <h4 className="font-bold text-green-400">HULK STATUS</h4>
+                <p className="text-green-300">
+                  {hulkStats.rageLevel > 200 ? "HULK IS WORLD BREAKER! STAND BACK!" :
+                   hulkStats.rageLevel > 100 ? "HULK SMASH EVERYTHING!" :
+                   hulkStats.rageLevel > 50 ? "Hulk getting angry..." :
+                   "Hulk is calm. For now."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
