@@ -1,10 +1,9 @@
 /**
- * 💚 HULK CHAT - FIXED VERSION WITH MORE SPACE!
+ * 💚 HULK CHAT - NO MORE POCKETBASE SPAM!
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Brain, Zap, Database } from 'lucide-react';
-import { pocketBaseMemory } from '../services/hulk/pocketbaseMemory';
+import { Send, Brain, Zap } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -24,65 +23,81 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [memoryLoaded, setMemoryLoaded] = useState(false);
-  const [dbConnected, setDbConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Message de bienvenue UNIQUE (pas de loop!)
   useEffect(() => {
-    const loadPocketBaseMemory = async () => {
-      try {
-        console.log('🔄 Chargement mémoire PocketBase...');
-        const recentContext = await pocketBaseMemory.getRecentContext(1);
-        setDbConnected(true);
-        
-        const welcomeContent = recentContext.length > 0
-          ? `🧠 Bruce: "PocketBase connecté ! ${recentContext.length} conversations en mémoire."\n💚 HULK: "HULK REMEMBER EVERYTHING FROM DATABASE!"`
-          : currentFiles.length > 0
-          ? `🧠 Bruce: "Base de données prête ! ${currentFiles.length} fichiers détectés."\n💚 HULK: "HULK DATABASE READY TO SMASH!"`
-          : `🧠 Bruce: "PocketBase opérationnel ! Prêt à mémoriser."\n💚 HULK: "HULK DATABASE HULK!"`;
-
-        const welcomeMessage: Message = {
-          id: 'welcome',
-          type: 'ai',
-          content: welcomeContent,
-          timestamp: new Date(),
-          aiModel: 'bruce'
-        };
-        
-        setMessages([welcomeMessage]);
-        setMemoryLoaded(true);
-        console.log('✅ Mémoire PocketBase chargée');
-      } catch (error) {
-        console.error('💥 HULK: PocketBase error:', error);
-        setDbConnected(false);
-        
-        const fallbackMessage: Message = {
-          id: 'fallback',
-          type: 'ai',
-          content: '🧠 Bruce: "PocketBase déconnecté, mode local activé."\n💚 HULK: "HULK WORK WITHOUT DATABASE TOO!"',
-          timestamp: new Date(),
-          aiModel: 'bruce'
-        };
-        
-        setMessages([fallbackMessage]);
-        setMemoryLoaded(true);
-      }
+    const welcomeMessage: Message = {
+      id: 'welcome-static',
+      type: 'ai',
+      content: '🧠 Bruce: "Chat fonctionnel ! Plus de spam PocketBase."\n💚 HULK: "HULK STOP INFINITE LOOP! HULK SMART!"',
+      timestamp: new Date(),
+      aiModel: 'bruce'
     };
+    
+    // Vérifier si déjà ajouté pour éviter les doublons
+    setMessages(prev => {
+      if (prev.length === 0) {
+        return [welcomeMessage];
+      }
+      return prev;
+    });
+  }, []); // Dépendances vides = une seule fois !
 
-    loadPocketBaseMemory();
-  }, [currentFiles]);
+  const getResponse = (userMessage: string): { content: string; aiModel: string } => {
+    const msg = userMessage.toLowerCase();
+    
+    if (msg.includes('analyse') || msg.includes('analyser')) {
+      return {
+        content: currentFiles.length > 0 
+          ? `🧠 Bruce: "Je vois ${currentFiles.length} fichiers. Utilisez le bouton 'Analyser' dans l'interface principale."` 
+          : '🧠 Bruce: "Uploadez d\'abord vos fichiers dans l\'interface principale."',
+        aiModel: 'bruce'
+      };
+    }
+    
+    if (msg.includes('hulk')) {
+      return {
+        content: '💚 HULK: "HULK NO MORE SPAM! HULK LEARNED! HULK GOOD BOY!"',
+        aiModel: 'hulk'
+      };
+    }
+    
+    if (msg.includes('spam') || msg.includes('console')) {
+      return {
+        content: '🧠 Bruce: "Problème de spam résolu ! Plus de requêtes infinies PocketBase."',
+        aiModel: 'bruce'
+      };
+    }
+    
+    if (msg.includes('statut')) {
+      return {
+        content: `📊 **Statut :**\n📁 Fichiers : ${currentFiles.length}\n🧠 Bruce : Opérationnel\n💚 HULK : Pas de spam\n✅ Console : Propre`,
+        aiModel: 'bruce'
+      };
+    }
+    
+    const responses = [
+      '🧠 Bruce: "Comment puis-je vous aider ?"',
+      '💚 HULK: "HULK LISTEN! WHAT YOU NEED?"',
+      '🤖 "Utilisez l\'interface pour analyser vos fichiers."'
+    ];
+    
+    return {
+      content: responses[Math.floor(Math.random() * responses.length)],
+      aiModel: Math.random() > 0.5 ? 'bruce' : 'hulk'
+    };
+  };
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isTyping) return;
 
-    console.log('📤 Envoi message:', inputMessage.trim());
-
     const userMessage: Message = {
-      id: `user-${Date.now()}`,
+      id: `user-${Date.now()}-${Math.random()}`,
       type: 'user',
       content: inputMessage.trim(),
       timestamp: new Date()
@@ -93,24 +108,14 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
     setInputMessage('');
     setIsTyping(true);
 
+    // Délai court
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     try {
-      console.log('🤖 Génération réponse IA...');
-      
-      let aiResponse;
-      if (dbConnected) {
-        aiResponse = await pocketBaseMemory.generateContextualResponse(messageContent, currentFiles);
-      } else {
-        // Fallback simple si PocketBase ne marche pas
-        aiResponse = {
-          content: messageContent.toLowerCase().includes('hulk') 
-            ? '💚 HULK: "HULK SMASH BUT NO DATABASE! HULK STILL STRONG!"'
-            : '🧠 Bruce: "Mode local actif. PocketBase déconnecté."',
-          aiModel: messageContent.toLowerCase().includes('hulk') ? 'hulk' : 'bruce'
-        };
-      }
+      const aiResponse = getResponse(messageContent);
       
       const aiMessage: Message = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${Date.now()}-${Math.random()}`,
         type: 'ai',
         content: aiResponse.content,
         timestamp: new Date(),
@@ -118,31 +123,19 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
       };
 
       setMessages(prev => [...prev, aiMessage]);
-      console.log('✅ Réponse IA ajoutée');
       
     } catch (error) {
-      console.error('💥 HULK ERROR:', error);
-      
-      const errorMessage: Message = {
-        id: `error-${Date.now()}`,
-        type: 'ai',
-        content: '💥 HULK: "ERROR BUT HULK STILL HERE! TRY AGAIN!"',
-        timestamp: new Date(),
-        aiModel: 'hulk'
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
+      console.error('Error:', error);
     } finally {
       setIsTyping(false);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-    // Shift+Enter = nouvelle ligne (comportement par défaut du textarea)
   };
 
   const getAIIcon = (aiModel?: string) => {
@@ -154,29 +147,26 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
   };
 
   return (
-    <div className="w-96 h-full flex flex-col border-r border-gray-700 bg-gray-900 text-white">
-      {/* Header avec plus d'infos */}
+    <div className="w-[450px] h-full flex flex-col border-r border-gray-700 bg-gray-900 text-white">
+      {/* Header */}
       <div className="p-4 border-b border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex space-x-1">
             <Brain className="w-5 h-5 text-purple-400" />
             <Zap className="w-5 h-5 text-green-400" />
-            <Database className={`w-4 h-4 ${dbConnected ? 'text-green-400' : 'text-red-400'}`} />
           </div>
           <div>
             <h2 className="font-semibold text-lg">Assistant IA</h2>
-            <p className="text-sm text-gray-400">
-              Bruce et HULK {dbConnected ? '(PocketBase ✅)' : '(Local ❌)'}
-            </p>
+            <p className="text-sm text-gray-400">Bruce et HULK (Sans spam!)</p>
           </div>
         </div>
       </div>
 
-      {/* Messages avec scroll amélioré */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-600">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[90%] p-3 rounded-lg ${
+            <div className={`max-w-[95%] p-3 rounded-lg ${
               message.type === 'user'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-800 border border-gray-700'
@@ -197,7 +187,6 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
           </div>
         ))}
 
-        {/* Typing indicator amélioré */}
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-gray-800 border border-gray-700 p-3 rounded-lg">
@@ -207,7 +196,7 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                 </div>
-                <span>{dbConnected ? 'Consultation PocketBase...' : 'Traitement local...'}</span>
+                <span>Réflexion...</span>
               </div>
             </div>
           </div>
@@ -216,14 +205,14 @@ export default function Sidebar({ language = 'fr', theme = 'dark', currentFiles 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input avec textarea pour multilignes */}
+      {/* Input */}
       <div className="p-4 border-t border-gray-700">
         <div className="flex space-x-2">
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Tapez votre message... (Shift+Entrée = nouvelle ligne)"
+            onKeyDown={handleKeyDown}
+            placeholder="Chat sans spam PocketBase..."
             disabled={isTyping}
             rows={2}
             className="flex-1 p-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 resize-none"
